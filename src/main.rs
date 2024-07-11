@@ -1,34 +1,34 @@
 use std::f32::consts::TAU;
 mod player;
+mod processing;
 
 use bevy::{
     gltf::{Gltf, GltfMesh, GltfNode},
-    math::Vec3Swizzles,
     prelude::*,
     render::camera::Exposure,
     window::CursorGrabMode,
 };
+
+use bevy::core_pipeline::tonemapping::DebandDither;
 use bevy_rapier3d::prelude::*;
 
 use player::*;
+use processing::*;
 
 const SPAWN_POINT: Vec3 = Vec3::new(0.0, 1.625, 0.0);
 
 fn main() {
     App::new()
         .insert_resource(AmbientLight {
-            color: Color::WHITE,
-            brightness: 0.0,
+            color: Color::srgb_u8(0xc9, 0xc7, 0xfc),
+            brightness: 900.0,
         })
-        .insert_resource(ClearColor(Color::BLACK))
-        .add_plugins(DefaultPlugins)
+        .insert_resource(ClearColor(Color::srgb_u8(0x19, 0x17, 0x3c)))
+        .add_plugins((DefaultPlugins, PostProcessPlugin))
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugins(FpsControllerPlugin)
         .add_systems(Startup, setup)
-        .add_systems(
-            Update,
-            (manage_cursor, scene_colliders, display_text, respawn),
-        )
+        .add_systems(Update, (manage_cursor, scene_colliders, respawn))
         .run();
 }
 
@@ -36,7 +36,7 @@ fn setup(mut commands: Commands, mut window: Query<&mut Window>, assets: Res<Ass
     let mut window = window.single_mut();
     window.title = String::from("im silly im silly im silly im silly");
 
-    commands.spawn(DirectionalLightBundle {
+    /*commands.spawn(DirectionalLightBundle {
         directional_light: DirectionalLight {
             illuminance: light_consts::lux::FULL_DAYLIGHT,
             shadows_enabled: true,
@@ -45,6 +45,7 @@ fn setup(mut commands: Commands, mut window: Query<&mut Window>, assets: Res<Ass
         transform: Transform::from_xyz(4.0, 7.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
     });
+     */
 
     let height = 3.0;
     let logical_entity = commands
@@ -89,15 +90,20 @@ fn setup(mut commands: Commands, mut window: Query<&mut Window>, assets: Res<Ass
                 fov: TAU / 5.0,
                 ..default()
             }),
+            deband_dither: DebandDither::Enabled,
             exposure: Exposure::SUNLIGHT,
+            ..default()
+        },
+        PostProcessSettings {
+            intensity: 0.5,
             ..default()
         },
         FogSettings {
             color: Color::BLACK,
             falloff: FogFalloff::from_visibility_colors(
                 20.0, // distance in world units up to which objects retain visibility (>= 5% contrast)
-                Color::srgb(0.13, 0.13, 0.13), // atmospheric extinction color (after light is lost due to absorption by atmospheric particles)
-                Color::srgb(0.25, 0.25, 0.25), // atmospheric inscattering color (light gained due to scattering from the sun)
+                Color::srgb_u8(0x29, 0x27, 0x4c), // atmospheric extinction color (after light is lost due to absorption by atmospheric particles)
+                Color::srgb_u8(0x55, 0x5e, 0x88), // atmospheric inscattering color (light gained due to scattering from the sun)
             ),
             ..default()
         },
@@ -199,26 +205,6 @@ fn manage_cursor(
             for mut controller in &mut controller_query {
                 controller.enable_input = false;
             }
-        }
-    }
-}
-
-fn display_text(
-    mut controller_query: Query<(&Transform, &Velocity)>,
-    mut text_query: Query<&mut Text>,
-) {
-    for (transform, velocity) in &mut controller_query {
-        for mut text in &mut text_query {
-            text.sections[0].value = format!(
-                "vel: {:.2}, {:.2}, {:.2}\npos: {:.2}, {:.2}, {:.2}\nspd: {:.2}",
-                velocity.linvel.x,
-                velocity.linvel.y,
-                velocity.linvel.z,
-                transform.translation.x,
-                transform.translation.y,
-                transform.translation.z,
-                velocity.linvel.xz().length()
-            );
         }
     }
 }
