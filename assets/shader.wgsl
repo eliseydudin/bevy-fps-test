@@ -1,24 +1,42 @@
-// This shader computes the chromatic aberration effect
-
-// Since post processing is a fullscreen effect, we use the fullscreen vertex shader provided by bevy.
-// This will import a vertex shader that renders a single fullscreen triangle.
-//
-// A fullscreen triangle is a single triangle that covers the entire screen.
-// The box in the top left in that diagram is the screen. The 4 x are the corner of the screen
-//
-// Y axis
-//  1 |  x-----x......
-//  0 |  |  s  |  . ´
-// -1 |  x_____x´
-// -2 |  :  .´
-// -3 |  :´
-//    +---------------  X axis
-//      -1  0  1  2  3
-//
-// As you can see, the triangle ends up bigger than the screen.
-//
-// You don't need to worry about this too much since bevy will compute the correct UVs for you.
 #import bevy_core_pipeline::fullscreen_vertex_shader::FullscreenVertexOutput
+
+const palette_size = 8;
+const SNESPalette = array<vec4<f32>, palette_size>(
+    vec4<f32>(0x7 / 255.0, 0xF / 255.0, 0x2b / 255.0, 1.0),     
+    //1B1A55
+    vec4<f32>(0x1B / 255.0, 0x1A / 255.0, 0x55 / 255.0, 1.0),     
+    //535C91
+    vec4<f32>(0x53 / 255.0, 0x5C / 255.0, 0x91 / 255.0, 1.0),     
+    //9290C3
+    vec4<f32>(0x92 / 255.0, 0x90 / 255.0, 0xc3 / 255.0, 1.0),     
+    //(0x19, 0x17, 0x3c)
+    vec4<f32>(0x19 / 255.0, 0x17 / 255.0, 0x3c / 255.0, 1.0),
+    //0F3460
+    vec4<f32>(0x0f / 255.0, 0x34 / 255.0, 0x60 / 255.0, 1.0),
+    //435585
+    vec4<f32>(0x43 / 255.0, 0x55 / 255.0, 0x85 / 255.0, 1.0),
+    //1F6E8C
+    vec4<f32>(0x1f / 255.0, 0x6e / 255.0, 0x8c / 255.0, 1.0),
+);
+
+// Function to find the closest color in the SNES palette
+fn closestSNESColor(color: vec4<f32>) -> vec4<f32> {
+    var palette: array<vec4<f32>, palette_size> = SNESPalette;
+    var closestColor: vec4<f32> = palette[0];
+    var closestDistanceSq: f32 = distance(color, closestColor);
+
+    for (var i : i32 = 1; i < palette_size; i = i + 1) {
+        let currentColor: vec4<f32> = palette[i];
+        let currentDistanceSq: f32 = distance(color, currentColor);
+
+        if (currentDistanceSq < closestDistanceSq) {
+            closestColor = currentColor;
+            closestDistanceSq = currentDistanceSq;
+        }
+    }
+
+    return closestColor;
+}
 
 @group(0) @binding(0) var screen_texture: texture_2d<f32>;
 @group(0) @binding(1) var texture_sampler: sampler;
@@ -35,12 +53,9 @@ struct PostProcessSettings {
 fn fragment(in: FullscreenVertexOutput) -> @location(0) vec4<f32> {
     // Chromatic aberration strength
     let offset_strength = settings.intensity;
-
-    // Sample each color channel with an arbitrary shift
+    let curr_color: vec4<f32> = textureSample(screen_texture, texture_sampler, in.uv);
+    let color = closestSNESColor(curr_color);
     return vec4<f32>(
-        textureSample(screen_texture, texture_sampler, in.uv).r,
-        textureSample(screen_texture, texture_sampler, in.uv).g,
-        textureSample(screen_texture, texture_sampler, in.uv).b,
-        1.0
+        color.r, color.g, color.b, 1.0
     );
 }

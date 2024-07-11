@@ -6,7 +6,7 @@ use bevy::{
     gltf::{Gltf, GltfMesh, GltfNode},
     prelude::*,
     render::camera::Exposure,
-    window::CursorGrabMode,
+    window::{CursorGrabMode, WindowResolution},
 };
 
 use bevy::core_pipeline::tonemapping::DebandDither;
@@ -21,10 +21,18 @@ fn main() {
     App::new()
         .insert_resource(AmbientLight {
             color: Color::srgb_u8(0xc9, 0xc7, 0xfc),
-            brightness: 900.0,
+            brightness: 100000.0,
         })
         .insert_resource(ClearColor(Color::srgb_u8(0x19, 0x17, 0x3c)))
-        .add_plugins((DefaultPlugins, PostProcessPlugin))
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                resolution:
+                    WindowResolution::new(1920., 1080.).with_scale_factor_override(150.0 * 3.0),
+                ..default()
+            }),
+            ..default()
+        }))
+        .add_plugins(PostProcessPlugin)
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugins(FpsControllerPlugin)
         .add_systems(Startup, setup)
