@@ -95,7 +95,7 @@ fn setup(mut commands: Commands, mut window: Query<&mut Window>, assets: Res<Ass
     commands.spawn((
         Camera3dBundle {
             projection: Projection::Perspective(PerspectiveProjection {
-                fov: TAU / 5.0,
+                fov: TAU / 4.0,
                 ..default()
             }),
             deband_dither: DebandDither::Enabled,
@@ -104,7 +104,7 @@ fn setup(mut commands: Commands, mut window: Query<&mut Window>, assets: Res<Ass
         },
         PostProcessSettings {
             intensity: 5.0,
-            ..default()
+            block_size: 4.0,
         },
         FogSettings {
             color: Color::BLACK,
