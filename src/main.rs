@@ -21,7 +21,7 @@ fn main() {
     App::new()
         .insert_resource(AmbientLight {
             color: Color::srgb_u8(0xc9, 0xc7, 0xfc),
-            brightness: 100000.0,
+            brightness: 10000.0,
         })
         .insert_resource(ClearColor(Color::srgb_u8(0x19, 0x17, 0x3c)))
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -103,7 +103,7 @@ fn setup(mut commands: Commands, mut window: Query<&mut Window>, assets: Res<Ass
             ..default()
         },
         PostProcessSettings {
-            intensity: 0.5,
+            intensity: 5.0,
             ..default()
         },
         FogSettings {

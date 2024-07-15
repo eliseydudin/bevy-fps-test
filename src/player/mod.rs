@@ -155,8 +155,8 @@ pub fn fps_controller_input(
             0.0,
             get_axis(&key_input, controller.key_forward, controller.key_back),
         );
-        input.jump = key_input.pressed(controller.key_jump);
         input.crouch = key_input.pressed(controller.key_crouch);
+        input.jump = key_input.pressed(controller.key_jump) && !input.crouch;
     }
 }
 
